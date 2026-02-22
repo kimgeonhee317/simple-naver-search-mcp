@@ -67,8 +67,23 @@ Add the following to your `claude_desktop_config.json`:
 | `naver_search_cafe` | Search Naver Cafe articles |
 
 All tools accept:
-- `query` (required) — search keyword
-- `display` (optional, 1–100, default 10) — number of results
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `query` | string | yes | — | Search keyword |
+| `display` | integer | no | 10 | Number of results to return (1–100) |
+| `sort` | `"sim"` \| `"date"` | no | `"sim"` | Sort order: relevance or most recent first |
+| `start` | integer | no | 1 | Pagination offset (1-based, max 1000) |
+
+**Pagination example** — fetching page 2 when `display=10`:
+```
+start=1  → results  1–10
+start=11 → results 11–20
+start=21 → results 21–30
+```
+The result header always shows context: `total: 1420 | showing: 1~10 | sort: date`
+
+> **Note:** `total` from Naver is approximate. Actual retrievable results are capped at 1000 regardless of reported total.
 
 ## Testing
 
