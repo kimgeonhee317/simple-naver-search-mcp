@@ -16,9 +16,6 @@ NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID")
 NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET")
 NAVER_API_BASE = "https://openapi.naver.com/v1/search"
 
-if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
-    raise RuntimeError("NAVER_CLIENT_ID and NAVER_CLIENT_SECRET must be set in environment")
-
 app = Server("naver-search-mcp")
 
 def strip_html(text: str) -> str:
@@ -348,6 +345,8 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
 
 
 def main():
+    if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
+        raise RuntimeError("NAVER_CLIENT_ID and NAVER_CLIENT_SECRET must be set in environment")
     import asyncio
 
     async def _run():
