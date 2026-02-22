@@ -34,13 +34,17 @@ async def naver_search(
 ) -> dict:
     display = max(1, min(display, 100))
     start = max(1, min(start, 1000))
-    sort = sort if sort in ("sim", "date") else "sim"
     headers = {
         "X-Naver-Client-Id": NAVER_CLIENT_ID,
         "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
     }
-    params = {"query": query, "display": display, "start": start, "sort": sort}
-    logger.info("naver_search type=%s query=%r display=%d start=%d sort=%s", search_type, query, display, start, sort)
+    valid_sorts = SORT_OPTIONS.get(search_type, [])
+    if valid_sorts:
+        sort = sort if sort in valid_sorts else "sim"
+    params: dict = {"query": query, "display": display, "start": start}
+    if valid_sorts:
+        params["sort"] = sort
+    logger.info("naver_search type=%s query=%r display=%d start=%d sort=%s", search_type, query, display, start, sort if valid_sorts else "n/a")
     async with httpx.AsyncClient() as client:
         response = await client.get(
             f"{NAVER_API_BASE}/{search_type}",
@@ -153,6 +157,20 @@ def fmt_cafearticle(items: list) -> str:
     return "\n".join(lines)
 
 
+# sort values supported per API type
+SORT_OPTIONS = {
+    "news":        ["sim", "date"],
+    "blog":        ["sim", "date"],
+    "webkr":       ["sim", "date"],
+    "image":       ["sim", "date"],
+    "shop":        ["sim", "date", "asc", "dsc"],
+    "doc":         ["sim", "date"],
+    "local":       [],                              # sort not supported
+    "kin":         ["sim", "date", "point"],
+    "book":        ["sim", "date", "count", "score"],
+    "cafearticle": ["sim", "date"],
+}
+
 TOOLS = [
     (
         "naver_search_news",
@@ -204,7 +222,8 @@ TOOLS = [
             "Search Naver Shopping for products and prices. "
             "Use this when the user asks about product prices, purchasing options, or shopping comparisons. "
             "Returns product name, price range, seller, and link. "
-            "Best for queries like '아이패드 가격', '운동화 추천'."
+            "Best for queries like '아이패드 가격', '운동화 추천'. "
+            "Supports sort: sim (relevance), date (latest), asc (price low→high), dsc (price high→low)."
         ),
         fmt_shop,
     ),
@@ -226,6 +245,7 @@ TOOLS = [
             "Use this when the user asks about a specific place, store, restaurant, or address. "
             "Query should be a place name or business name, NOT a full sentence. "
             "Returns place name, category, phone number, and address. "
+            "Note: sort is not supported for this type."
         ),
         fmt_local,
     ),
@@ -236,7 +256,8 @@ TOOLS = [
             "Search Naver 지식iN (Knowledge IN) for community Q&A. "
             "Use this when the user wants community opinions, practical advice, or answers to specific questions. "
             "Returns question title, excerpt, and link. "
-            "Best for queries seeking real user experiences or common questions."
+            "Best for queries seeking real user experiences or common questions. "
+            "Supports sort: sim (relevance), date (latest), point (most answered)."
         ),
         fmt_kin,
     ),
@@ -246,7 +267,8 @@ TOOLS = [
         (
             "Search Naver Books for Korean and international books. "
             "Use this when the user asks about books, authors, publishers, or ISBN. "
-            "Returns title, author, publisher, publish date, price, and description."
+            "Returns title, author, publisher, publish date, price, and description. "
+            "Supports sort: sim (relevance), date (latest), count (sales), score (rating)."
         ),
         fmt_book,
     ),
@@ -268,23 +290,27 @@ TOOL_MAP = {name: (api_type, fmt) for name, api_type, _, fmt in TOOLS}
 
 @app.list_tools()
 async def list_tools() -> list[types.Tool]:
-    return [
-        types.Tool(
+    tools = []
+    for name, api_type, desc, _ in TOOLS:
+        sort_values = SORT_OPTIONS[api_type]
+        properties = {
+            "query": {"type": "string", "description": "Search query"},
+            "display": {"type": "integer", "description": "Number of results (1-100)", "default": 10},
+            "start": {"type": "integer", "description": "Pagination offset, 1-based (default 1). Use to fetch next page: e.g. start=11 for page 2 when display=10.", "default": 1},
+        }
+        if sort_values:
+            properties["sort"] = {
+                "type": "string",
+                "enum": sort_values,
+                "description": f"Sort order (default: sim). Options: {', '.join(sort_values)}",
+                "default": "sim",
+            }
+        tools.append(types.Tool(
             name=name,
             description=desc,
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "query": {"type": "string", "description": "Search query"},
-                    "display": {"type": "integer", "description": "Number of results (1-100)", "default": 10},
-                    "start": {"type": "integer", "description": "Pagination offset, 1-based (default 1). Use to fetch next page: e.g. start=11 for page 2 when display=10.", "default": 1},
-                    "sort": {"type": "string", "enum": ["sim", "date"], "description": "Sort order: 'sim' (relevance, default) or 'date' (most recent first). Use 'date' for time-sensitive queries.", "default": "sim"},
-                },
-                "required": ["query"],
-            },
-        )
-        for name, _, desc, _ in TOOLS
-    ]
+            inputSchema={"type": "object", "properties": properties, "required": ["query"]},
+        ))
+    return tools
 
 
 @app.call_tool()
