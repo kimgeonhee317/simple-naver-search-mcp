@@ -1,6 +1,12 @@
 # simple-naver-search-mcp
 
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![CI](https://github.com/kimgeonhee317/simple-naver-search-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/kimgeonhee317/simple-naver-search-mcp/actions/workflows/ci.yml)
+
 An MCP server that exposes Naver Search (뉴스, 블로그, 웹, 이미지, 쇼핑, 지식iN, 지역, 책, 카페) as tools for Claude and other MCP clients.
+
+Designed for AI agents that cannot access the internet directly — gives LLMs real-time access to Korean web search without outbound HTTP from the model itself.
 
 ## Requirements
 
@@ -12,7 +18,7 @@ An MCP server that exposes Naver Search (뉴스, 블로그, 웹, 이미지, 쇼�
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/your-username/simple-naver-search-mcp
+git clone https://github.com/kimgeonhee317/simple-naver-search-mcp
 cd simple-naver-search-mcp
 
 # 2. Install dependencies
@@ -60,7 +66,7 @@ Add the following to your `claude_desktop_config.json`:
 | `naver_search_web` | Search Naver Web pages |
 | `naver_search_image` | Search Naver Images |
 | `naver_search_shop` | Search Naver Shopping |
-| `naver_search_doc` | Search Naver academic/office docs |
+| `naver_search_doc` | Search Naver academic/office docs *(returns empty for most general queries)* |
 | `naver_search_local` | Search Naver Local places |
 | `naver_search_kin` | Search Naver 지식iN (Q&A) |
 | `naver_search_book` | Search Naver Books |
@@ -147,10 +153,9 @@ uv run python test_api.py
 | `cafearticle` | `title`, `link`, `description`, `cafename`, `cafeurl` | Has cafe name info |
 
 **Notes:**
-- `title` and `description` contain HTML `<b>` tags — strip before use
-- `news` is richest for real estate queries (has `pubDate`)
-- `shop`, `doc`, `book` irrelevant for real estate use case
-- `local` requires a place name query format
+- `title` and `description` contain HTML `<b>` tags — stripped automatically by the server before returning results
+- `shop`, `doc`, `book` return empty results for non-product / non-book queries
+- `local` requires a place name or business name as the query, not a full sentence
 
 ## License
 
