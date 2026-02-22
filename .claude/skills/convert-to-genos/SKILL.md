@@ -1,4 +1,14 @@
-Convert a standard MCP server file (`server.py`) to a genos-compatible version and save it as `genos/server-genos.py` in the same directory.
+---
+name: convert-to-genos
+description: Convert a standard MCP server.py to a genos-compatible FastMCP version. Use when the user asks to convert, migrate, or adapt an MCP server for the genos air-gapped environment.
+argument-hint: [path/to/server.py]
+disable-model-invocation: true
+---
+
+Convert a standard MCP server file to a genos-compatible version and save it as `genos/server-genos.py` in the same directory.
+
+Default source file: `src/naver_search/server.py`
+If the user passes an argument, use that path instead: `$ARGUMENTS`
 
 ## What genos is
 
@@ -6,7 +16,7 @@ Genos is an air-gapped MCP framework. Third-party packages cannot be imported at
 
 ## Conversion steps
 
-Read the source `server.py` (or the file the user points to), then produce `genos/server-genos.py` following these rules:
+Read the source file, then produce `genos/server-genos.py` following these rules:
 
 ### 1. Replace server setup
 - Remove: `from mcp.server import Server`, `app = Server(...)`, `load_dotenv()`
@@ -88,5 +98,3 @@ async def naver_search_news(query: str, display: int = 10, start: int = 1, sort:
     resp.raise_for_status()
     return fmt_result(resp.json())
 ```
-
-Now perform this conversion on the file specified by the user (default: `src/naver_search/server.py`).
