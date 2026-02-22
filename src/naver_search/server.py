@@ -3,9 +3,9 @@ import os
 import re
 from dotenv import load_dotenv
 import httpx
-import mcp.server.stdio
 import mcp.types as types
 from mcp.server import Server
+from mcp.server.stdio import stdio_server
 
 load_dotenv()
 
@@ -20,7 +20,6 @@ if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
     raise RuntimeError("NAVER_CLIENT_ID and NAVER_CLIENT_SECRET must be set in environment")
 
 app = Server("naver-search-mcp")
-
 
 def strip_html(text: str) -> str:
     return re.sub(r"<[^>]+>", "", text or "")
@@ -146,16 +145,113 @@ def fmt_cafearticle(items: list) -> str:
 
 
 TOOLS = [
-    ("naver_search_news",        "news",         "Search Naver News articles",           fmt_news),
-    ("naver_search_blog",        "blog",         "Search Naver Blog posts",              fmt_blog),
-    ("naver_search_web",         "webkr",        "Search Naver Web pages",               fmt_webkr),
-    ("naver_search_image",       "image",        "Search Naver Images",                  fmt_image),
-    ("naver_search_shop",        "shop",         "Search Naver Shopping",                fmt_shop),
-    ("naver_search_doc",         "doc",          "Search Naver academic/office docs",    fmt_doc),
-    ("naver_search_local",       "local",        "Search Naver Local places",            fmt_local),
-    ("naver_search_kin",         "kin",          "Search Naver 지식iN (Q&A)",             fmt_kin),
-    ("naver_search_book",        "book",         "Search Naver Books",                   fmt_book),
-    ("naver_search_cafe",        "cafearticle",  "Search Naver Cafe articles",           fmt_cafearticle),
+    (
+        "naver_search_news",
+        "news",
+        (
+            "Search Naver News for recent Korean news articles. "
+            "Use this when the user asks about current events, breaking news, or recent developments on a topic. "
+            "Returns title, publication date, source link, and a short excerpt. "
+            "Best for time-sensitive queries like market trends, policy changes, or recent incidents."
+        ),
+        fmt_news,
+    ),
+    (
+        "naver_search_blog",
+        "blog",
+        (
+            "Search Naver Blog for personal blog posts written in Korean. "
+            "Use this when the user wants detailed personal experiences, reviews, tips, or how-to guides. "
+            "Returns title, author, post date, excerpt, and link. "
+            "Best for queries like product reviews, travel experiences, recipes, or local tips."
+        ),
+        fmt_blog,
+    ),
+    (
+        "naver_search_web",
+        "webkr",
+        (
+            "Search Naver Web for general Korean web pages. "
+            "Use this as a broad fallback when no other specialized tool fits, "
+            "or when the user needs general information from any type of Korean website. "
+            "Returns title, description, and link."
+        ),
+        fmt_webkr,
+    ),
+    (
+        "naver_search_image",
+        "image",
+        (
+            "Search Naver Images. "
+            "Use this when the user explicitly asks for images or visual references. "
+            "Returns image title, direct image URL, thumbnail URL, and dimensions."
+        ),
+        fmt_image,
+    ),
+    (
+        "naver_search_shop",
+        "shop",
+        (
+            "Search Naver Shopping for products and prices. "
+            "Use this when the user asks about product prices, purchasing options, or shopping comparisons. "
+            "Returns product name, price range, seller, and link. "
+            "Best for queries like '아이패드 가격', '운동화 추천'."
+        ),
+        fmt_shop,
+    ),
+    (
+        "naver_search_doc",
+        "doc",
+        (
+            "Search Naver for academic papers and office documents (Korean). "
+            "Use this when the user needs formal documents, research papers, or official reports. "
+            "Returns document title, excerpt, and link."
+        ),
+        fmt_doc,
+    ),
+    (
+        "naver_search_local",
+        "local",
+        (
+            "Search Naver Local for places, businesses, and restaurants in Korea. "
+            "Use this when the user asks about a specific place, store, restaurant, or address. "
+            "Query should be a place name or business name, NOT a full sentence. "
+            "Returns place name, category, phone number, and address. "
+        ),
+        fmt_local,
+    ),
+    (
+        "naver_search_kin",
+        "kin",
+        (
+            "Search Naver 지식iN (Knowledge IN) for community Q&A. "
+            "Use this when the user wants community opinions, practical advice, or answers to specific questions. "
+            "Returns question title, excerpt, and link. "
+            "Best for queries seeking real user experiences or common questions."
+        ),
+        fmt_kin,
+    ),
+    (
+        "naver_search_book",
+        "book",
+        (
+            "Search Naver Books for Korean and international books. "
+            "Use this when the user asks about books, authors, publishers, or ISBN. "
+            "Returns title, author, publisher, publish date, price, and description."
+        ),
+        fmt_book,
+    ),
+    (
+        "naver_search_cafe",
+        "cafearticle",
+        (
+            "Search Naver Cafe for community forum posts. "
+            "Use this when the user wants niche community discussions, enthusiast forums, or group-specific posts. "
+            "Returns post title, cafe name, excerpt, and link. "
+            "Best for hobbyist, investment, or fan community topics."
+        ),
+        fmt_cafearticle,
+    ),
 ]
 
 TOOL_MAP = {name: (api_type, fmt) for name, api_type, _, fmt in TOOLS}
@@ -214,7 +310,12 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
 
 def main():
     import asyncio
-    asyncio.run(mcp.server.stdio.run(app))
+
+    async def _run():
+        async with stdio_server() as (read_stream, write_stream):
+            await app.run(read_stream, write_stream, app.create_initialization_options())
+
+    asyncio.run(_run())
 
 
 if __name__ == "__main__":
