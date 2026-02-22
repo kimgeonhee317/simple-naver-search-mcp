@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "naver-search": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/ABSOLUTE/PATH/TO/simple-naver-search-mcp",
+        "run",
+        "naver-search-mcp"
+      ],
+      "env": {
+        "NAVER_CLIENT_ID": "your_client_id_here",
+        "NAVER_CLIENT_SECRET": "your_client_secret_here"
+      }
+    }
+  }
+}
