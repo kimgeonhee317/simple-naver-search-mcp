@@ -25,18 +25,27 @@ def strip_html(text: str) -> str:
     return re.sub(r"<[^>]+>", "", text or "")
 
 
-async def naver_search(search_type: str, query: str, display: int = 10) -> dict:
+async def naver_search(
+    search_type: str,
+    query: str,
+    display: int = 10,
+    start: int = 1,
+    sort: str = "sim",
+) -> dict:
     display = max(1, min(display, 100))
+    start = max(1, min(start, 1000))
+    sort = sort if sort in ("sim", "date") else "sim"
     headers = {
         "X-Naver-Client-Id": NAVER_CLIENT_ID,
         "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
     }
-    logger.info("naver_search type=%s query=%r display=%d", search_type, query, display)
+    params = {"query": query, "display": display, "start": start, "sort": sort}
+    logger.info("naver_search type=%s query=%r display=%d start=%d sort=%s", search_type, query, display, start, sort)
     async with httpx.AsyncClient() as client:
         response = await client.get(
             f"{NAVER_API_BASE}/{search_type}",
             headers=headers,
-            params={"query": query, "display": display},
+            params=params,
         )
         if response.status_code == 401:
             raise ValueError("Invalid Naver API credentials. Check NAVER_CLIENT_ID and NAVER_CLIENT_SECRET.")
@@ -268,6 +277,8 @@ async def list_tools() -> list[types.Tool]:
                 "properties": {
                     "query": {"type": "string", "description": "Search query"},
                     "display": {"type": "integer", "description": "Number of results (1-100)", "default": 10},
+                    "start": {"type": "integer", "description": "Pagination offset, 1-based (default 1). Use to fetch next page: e.g. start=11 for page 2 when display=10.", "default": 1},
+                    "sort": {"type": "string", "enum": ["sim", "date"], "description": "Sort order: 'sim' (relevance, default) or 'date' (most recent first). Use 'date' for time-sensitive queries.", "default": "sim"},
                 },
                 "required": ["query"],
             },
@@ -287,9 +298,11 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
 
     api_type, fmt = TOOL_MAP[name]
     display = arguments.get("display", 10)
+    start = arguments.get("start", 1)
+    sort = arguments.get("sort", "sim")
 
     try:
-        data = await naver_search(api_type, query, display)
+        data = await naver_search(api_type, query, display, start, sort)
     except ValueError as e:
         return [types.TextContent(type="text", text=f"Error: {e}")]
     except httpx.HTTPStatusError as e:
@@ -303,7 +316,7 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
     if not items:
         result = f"No results found. (total reported: {total})"
     else:
-        result = f"total: {total}\n\n" + fmt(items)
+        result = f"total: {total} | showing: {start}~{start + len(items) - 1} | sort: {sort}\n\n" + fmt(items)
 
     return [types.TextContent(type="text", text=result)]
 
