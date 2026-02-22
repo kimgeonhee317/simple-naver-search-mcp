@@ -38,7 +38,7 @@ async def main():
 
     print(f"Client ID: {CLIENT_ID[:6]}... (loaded)\n")
 
-    query = "래미안아름숲 부동산 전망"
+    query = "탁구 횡회전 서브 주는법"
     async with httpx.AsyncClient() as client:
         for search_type in SEARCH_TYPES:
             await test_search(client, search_type, query)

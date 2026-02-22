@@ -27,6 +27,9 @@ uv sync
 # 3. Set credentials
 cp .env.example .env
 # Edit .env and fill in NAVER_CLIENT_ID and NAVER_CLIENT_SECRET
+
+# 4. (Optional) Install dev dependencies for manual API testing
+uv sync --extra dev
 ```
 
 ## Claude Desktop Configuration
@@ -59,18 +62,18 @@ Add the following to your `claude_desktop_config.json`:
 
 ## Available Tools
 
-| Tool | Description |
-|---|---|
-| `naver_search_news` | Search Naver News articles |
-| `naver_search_blog` | Search Naver Blog posts |
-| `naver_search_web` | Search Naver Web pages |
-| `naver_search_image` | Search Naver Images |
-| `naver_search_shop` | Search Naver Shopping |
-| `naver_search_doc` | Search Naver academic/office docs *(returns empty for most general queries)* |
-| `naver_search_local` | Search Naver Local places |
-| `naver_search_kin` | Search Naver 지식iN (Q&A) |
-| `naver_search_book` | Search Naver Books |
-| `naver_search_cafe` | Search Naver Cafe articles |
+| Tool | Description | Supported `sort` values |
+|---|---|---|
+| `naver_search_news` | Search Naver News articles | `sim`, `date` |
+| `naver_search_blog` | Search Naver Blog posts | `sim`, `date` |
+| `naver_search_web` | Search Naver Web pages | `sim`, `date` |
+| `naver_search_image` | Search Naver Images | `sim`, `date` |
+| `naver_search_shop` | Search Naver Shopping | `sim`, `date`, `asc` (price↑), `dsc` (price↓) |
+| `naver_search_doc` | Search Naver academic/office docs *(returns empty for most general queries)* | `sim`, `date` |
+| `naver_search_local` | Search Naver Local places | *(not supported)* |
+| `naver_search_kin` | Search Naver 지식iN (Q&A) | `sim`, `date`, `point` |
+| `naver_search_book` | Search Naver Books | `sim`, `date`, `count`, `score` |
+| `naver_search_cafe` | Search Naver Cafe articles | `sim`, `date` |
 
 All tools accept:
 
@@ -78,7 +81,7 @@ All tools accept:
 |---|---|---|---|---|
 | `query` | string | yes | — | Search keyword |
 | `display` | integer | no | 10 | Number of results to return (1–100) |
-| `sort` | `"sim"` \| `"date"` | no | `"sim"` | Sort order: relevance or most recent first |
+| `sort` | string | no | `"sim"` | Sort order — see table above for valid values per tool |
 | `start` | integer | no | 1 | Pagination offset (1-based, max 1000) |
 
 **Pagination example** — fetching page 2 when `display=10`:
@@ -131,10 +134,10 @@ Tool descriptions handle single-tool selection, but a system prompt is needed fo
 
 > This is a general template. Customize it for your specific domain (e.g. real estate agent, shopping assistant, news summarizer).
 
-## Testing
+## Manual API Testing
 
 ```bash
-uv run python test_api.py
+uv run python scripts/test_api.py
 ```
 
 ## Naver Search API — Type Reference

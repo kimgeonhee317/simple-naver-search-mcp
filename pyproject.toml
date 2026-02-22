@@ -5,10 +5,17 @@ description = "Simple Naver Search MCP server using Naver Open API"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "httpx>=0.28.1",
     "mcp[cli]>=1.26.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "httpx>=0.28.1",
     "python-dotenv>=1.0.0",
 ]
+
+[project.urls]
+Repository = "https://github.com/kimgeonhee317/simple-naver-search-mcp"
 
 [project.scripts]
 naver-search-mcp = "naver_search.server:main"
