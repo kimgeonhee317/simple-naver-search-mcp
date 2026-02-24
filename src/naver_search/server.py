@@ -1,3 +1,4 @@
+import html
 import logging
 import os
 import re
@@ -19,17 +20,16 @@ NAVER_API_BASE = "https://openapi.naver.com/v1/search"
 app = Server("naver-search-mcp")
 
 def strip_html(text: str) -> str:
-    return re.sub(r"<[^>]+>", "", text or "")
-
+    return html.unescape(re.sub(r"<[^>]+>", "", text or ""))
 
 async def naver_search(
     search_type: str,
     query: str,
-    display: int = 10,
+    display: int = 3,
     start: int = 1,
     sort: str = "sim",
 ) -> dict:
-    display = max(1, min(display, 100))
+    display = max(3, min(display, 100))
     start = max(1, min(start, 1000))
     headers = {
         "X-Naver-Client-Id": NAVER_CLIENT_ID,
@@ -292,7 +292,7 @@ async def list_tools() -> list[types.Tool]:
         sort_values = SORT_OPTIONS[api_type]
         properties = {
             "query": {"type": "string", "description": "Search query"},
-            "display": {"type": "integer", "description": "Number of results (1-100)", "default": 10},
+            "display": {"type": "integer", "description": "Number of results (1-100)", "default": 3},
             "start": {"type": "integer", "description": "Pagination offset, 1-based (default 1). Use to fetch next page: e.g. start=11 for page 2 when display=10.", "default": 1},
         }
         if sort_values:
@@ -320,7 +320,7 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
         return [types.TextContent(type="text", text="Error: query must not be empty.")]
 
     api_type, fmt = TOOL_MAP[name]
-    display = arguments.get("display", 10)
+    display = arguments.get("display", 3)
     start = arguments.get("start", 1)
     sort = arguments.get("sort", "sim")
 

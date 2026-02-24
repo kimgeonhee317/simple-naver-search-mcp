@@ -21,7 +21,7 @@ SEARCH_TYPES = ["news", "blog", "webkr", "image", "shop", "doc", "local", "kin",
 
 def build_session() -> requests.Session:
     session = requests.Session()
-    session.verify = True
+    session.verify = False
     # warnings.filterwarnings("ignore", message="Unverified HTTPS request")
     # try:
     #     import urllib3
